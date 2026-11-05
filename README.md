@@ -50,7 +50,32 @@ cd rds-mysql && terraform destroy
 
 ## Resultados medidos
 
-RESULTADOS_AQUI
+Ejecución real del 5 de noviembre de 2026 en `us-east-1` (cuenta del grupo), con Terraform 1.17 y AWS provider 6.x.
+
+| Medición | Aurora MySQL | RDS for MySQL |
+|---|---|---|
+| `terraform apply` (todo el stack) | 8 min 44 s · 5 recursos | 18 min 17 s · 4 recursos (la réplica se crea después de la principal) |
+| Motor | Aurora MySQL 3.10.3 (compatible con MySQL 8.0.42) | MySQL 8.4.11 |
+| Script en la principal | 10 000 filas | 10 000 filas |
+| Escritura en la réplica | `ERROR 1836 … read-only mode` | `ERROR 1290 … --read-only option` |
+| Recuperación | **Failover** a la réplica: **9 s** según eventos de AWS (07:07:03 → 07:07:12 UTC), 24 s medidos desde la terminal | **Reboot** sin Multi-AZ: **22 s sin servicio** según eventos (07:07:05 → 07:07:26 UTC), 68 s hasta que la terminal volvió a conectar |
+| `terraform destroy` | 9 min 31 s · 5 recursos | 4 min 42 s · 4 recursos |
+| Costo por hora de la demo (bajo demanda) | ≈ US$ 0,164 (2 × db.t3.medium) | ≈ US$ 0,034 (2 × db.t3.micro) |
+
+## Evidencias
+
+Salida real de la terminal, guardada como imagen (`docs/evidencias/`):
+
+| | |
+|---|---|
+| 01 · Plan de los dos stacks | ![](docs/evidencias/01-plan.png) |
+| 02 · Apply de Aurora y outputs | ![](docs/evidencias/02-aurora-apply.png) |
+| 03 · Apply de RDS for MySQL y outputs | ![](docs/evidencias/03-rds-apply.png) |
+| 04 · Aurora: miembros, script en la escritora y prueba en la lectora | ![](docs/evidencias/04-aurora-uso.png) |
+| 05 · Aurora: failover y eventos | ![](docs/evidencias/05-aurora-failover.png) |
+| 06 · RDS: instancias, script en la principal y prueba en la réplica | ![](docs/evidencias/06-rds-uso.png) |
+| 07 · RDS: reboot y eventos | ![](docs/evidencias/07-rds-reboot.png) |
+| 08 · Destroy de los dos stacks y verificación (sin recursos) | ![](docs/evidencias/08-destroy.png) |
 
 ## Autor
 

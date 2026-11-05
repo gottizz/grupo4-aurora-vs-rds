@@ -2,6 +2,8 @@
 # Demo de Aurora MySQL sobre lo que desplegó Terraform (correr desde la raíz del repo).
 # Requiere: AWS CLI, cliente mysql y haber hecho `terraform apply` en aurora/.
 set -uo pipefail
+export AWS_REGION="${AWS_REGION:-us-east-1}"
+export AWS_DEFAULT_REGION="$AWS_REGION"
 cd "$(dirname "$0")/../aurora"
 W=$(terraform output -raw endpoint_escritor)
 R=$(terraform output -raw endpoint_lector)
@@ -25,7 +27,9 @@ s=$(date +%s)
 aws rds failover-db-cluster --db-cluster-identifier "$CL" --query "DBCluster.Status" --output text
 while :; do
   ahora=$(aws rds describe-db-clusters --db-cluster-identifier "$CL" --query "DBClusters[0].DBClusterMembers[?IsClusterWriter].DBInstanceIdentifier" --output text)
-  [ "$ahora" != "$antes" ] && break; sleep 2
+  [ -n "$ahora" ] && [ "$ahora" != "$antes" ] && break
+  [ $(( $(date +%s)-s )) -gt 300 ] && { echo "Tiempo de espera agotado"; break; }
+  sleep 2
 done
 echo ">>> Escritora: $antes -> $ahora en $(( $(date +%s)-s )) s (medido desde la terminal)"
 sleep 20

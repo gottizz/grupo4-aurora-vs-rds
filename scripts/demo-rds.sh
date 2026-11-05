@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Demo de RDS for MySQL sobre lo que desplegó Terraform (correr desde la raíz del repo).
 set -uo pipefail
+export AWS_REGION="${AWS_REGION:-us-east-1}"
+export AWS_DEFAULT_REGION="$AWS_REGION"
 cd "$(dirname "$0")/../rds-mysql"
 P=$(terraform output -raw endpoint_principal)
 R=$(terraform output -raw endpoint_replica)
@@ -24,6 +26,6 @@ s=$(date +%s)
 aws rds reboot-db-instance --db-instance-identifier "$ID" --query "DBInstance.DBInstanceStatus" --output text
 sleep 5
 aws rds wait db-instance-available --db-instance-identifier "$ID"
-until mysql -h "$P" -u admin -N -e "SELECT 1" >/dev/null 2>&1; do sleep 2; done
+for _ in $(seq 1 150); do mysql -h "$P" -u admin -N -e "SELECT 1" >/dev/null 2>&1 && break; sleep 2; done
 echo ">>> Reboot: la base volvió a aceptar conexiones en $(( $(date +%s)-s )) s (medido desde la terminal)"
 aws rds describe-events --source-type db-instance --source-identifier "$ID" --duration 30 --query "Events[].[Date,Message]" --output table
