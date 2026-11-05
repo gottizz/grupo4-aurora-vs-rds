@@ -1,0 +1,9 @@
+# Estado y archivos locales de Terraform (pueden contener la contraseña)
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
+.DS_Store
+logs/
+tfplan
